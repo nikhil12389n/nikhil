@@ -1,0 +1,133 @@
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+contract SCM
+{
+    // ["DIVISION1":["D1ADST1","D1ADST2"],"DIVISION2":["D2ADST1","D2ADST2"],"DIVISION3":["D3ADST1","D3ADST2"]]
+    //ADST  //SEND REQUEST
+    struct requestsentadst {
+        uint reqno;
+        string from;
+        string [] products;
+        string[] quantities;
+        string date;
+        string status;
+        string acceptedby;
+    }
+    mapping(string=>requestsentadst[]) public reqsendadst;
+    mapping(string=>uint) public requestcount;
+     function Allrequestsentadst(string memory a) public view returns(requestsentadst[] memory){
+         return reqsendadst[a];
+     }
+    function getcountreq(string memory a) public view  returns(uint){
+        return requestcount[a];
+
+    }
+    function requestsendadst(string memory from,string[] memory products,string[] memory quantities,string memory date)   public{
+        if(requestcount[from]>=0){
+            requestcount[from]+=1;
+        }
+        else{
+            requestcount[from]=0;
+        }
+        requestsentadst memory l=requestsentadst(requestcount[from],from,products,quantities,date,"pending","pending");
+        ReceivedRequestsDivisions memory l1=ReceivedRequestsDivisions(requestcount[from],from,products,quantities,date,"pending");
+        reqsendadst[from].push(l);
+        if(keccak256(bytes(from))==keccak256(bytes("D1ADST1"))){
+            receivedreqdivisions["DIVISION1"][from].push(l1);
+        }
+        if(keccak256(bytes(from))==keccak256(bytes("D1ADST2"))){
+            receivedreqdivisions["DIVISION1"][from].push(l1);
+        }
+        if(keccak256(bytes(from))==keccak256(bytes("D2ADST1"))){
+            receivedreqdivisions["DIVISION2"][from].push(l1);
+        }
+        if(keccak256(bytes(from))==keccak256(bytes("D2ADST2"))){
+            receivedreqdivisions["DIVISION2"][from].push(l1);
+        }
+        if(keccak256(bytes(from))==keccak256(bytes("D3ADST1"))){
+            receivedreqdivisions["DIVISION3"][from].push(l1);
+        }
+        if(keccak256(bytes(from))==keccak256(bytes("D3ADST2"))){
+            receivedreqdivisions["DIVISION3"][from].push(l1);
+        }
+    }
+    
+    //DDST
+    struct ReceivedRequestsDivisions{
+        uint requestno;
+        string from;
+        string[] products;
+        string[] quantities;
+        string date;
+        string acceptedstatus;
+    }
+    mapping(string=>mapping(string=>ReceivedRequestsDivisions[])) public receivedreqdivisions;
+    function reqacceptddst(string memory division,string memory unit,uint reqno) public{
+        for(uint i=0;i<receivedreqdivisions[division][unit].length;i++){
+            if(i==reqno-1){
+                receivedreqdivisions[division][unit][i].acceptedstatus="accepted";
+                reqsendadst[unit][i].acceptedby=division;
+                reqsendadst[unit][i].status="active";
+            }
+        }
+    }
+    function getallrequestsddst(string memory division,string memory adst) public  view returns(ReceivedRequestsDivisions[] memory){
+        return receivedreqdivisions[division][adst];
+    }
+   
+   
+    //DGST
+    struct ReceivedRequestsDGST
+    {
+        uint reqno;
+        string from;
+        string[] products;
+        string[] quantities;
+        string date;
+        string acceptedstatus;
+    }
+    mapping(string=>ReceivedRequestsDGST[]) public receivedreqdgst;
+   function getAllreceivedreqdgst(string memory unit) public view returns(ReceivedRequestsDGST[] memory){
+       return receivedreqdgst[unit];
+   }
+
+    function Allreceivedreqdgst(string memory division,uint reqno,string memory unit,string[] memory p,string[] memory q,string memory date) public{
+        ReceivedRequestsDGST memory l=ReceivedRequestsDGST(reqno,unit,p,q,date,"pending");
+        receivedreqdgst[unit].push(l);
+        for(uint i=0;i<receivedreqdivisions[division][unit].length;i++){
+            if(i==reqno-1){
+                receivedreqdivisions[division][unit][i].acceptedstatus="declined";
+            }
+
+        }
+    }
+      function acceptdgst(string memory dgst,string memory unit,uint reqno) public{
+          reqsendadst[unit][reqno-1].status="accepted";
+          reqsendadst[unit][reqno-1].acceptedby=dgst;
+          receivedreqdgst[unit][reqno-1].acceptedstatus="accepted";
+      }
+    //MANUFACTURER
+    struct ReceivedManufacturer
+    {
+        uint reqno;
+        string from;
+        string[] products;
+        string[] quantities;
+        string acceptedstatus;
+        string date;
+    }
+    mapping(string=>ReceivedManufacturer[]) public receivedreqmanuf;
+    function Receivedreqmanuf(uint reqno,string memory unit,string[] memory p,string[] memory q,string memory date) public{
+        ReceivedManufacturer memory l=ReceivedManufacturer(reqno,unit,p,q,"pending",date);
+        receivedreqdgst[unit][reqno-1].acceptedstatus="declined";
+        receivedreqmanuf[unit].push(l);
+    }
+    function getAllreceivedreqmanuf(string memory unit) public view returns(ReceivedManufacturer[] memory){
+        return receivedreqmanuf[unit];
+    }
+    function acceptreqmanuf(string memory manuf,uint reqno,string memory from) public{
+        receivedreqmanuf[from][reqno-1].acceptedstatus="accepted";
+        reqsendadst[from][reqno-1].status="accepted";
+        reqsendadst[from][reqno-1].acceptedby=manuf;
+    }
+}

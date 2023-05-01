@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"java.project.sourcePaths": [
+			"javaprgms",
+			"C++"
+		],
+		"liveServer.settings.multiRootWorkspaceName": "vendorprojectfinal"
+	}
+}

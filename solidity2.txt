@@ -1,0 +1,225 @@
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+contract SCM2
+{
+
+    //ADST
+    struct ReceiveReqADST
+    {
+        uint reqno;
+        string[] products;
+        string[] quantities;
+        string from;
+        string date;
+        string acceptedstatus;
+    }
+
+    mapping(string=>mapping(string=>ReceiveReqADST[])) public reqreceiveadst;
+
+     //DDST
+    struct RequestSendDDST
+    {
+        uint reqno;
+        string from;
+        string[] products;
+        string[] quantities;
+        string date;
+        string status;
+        string acceptedby;
+    
+    }
+    mapping(string=>uint) public requestcount;
+    function getcountreq(string memory a) public view  returns(uint){
+        return requestcount[a];
+
+    }
+
+    function getallreceivereq(string memory division,string memory unit) public view returns(ReceiveReqADST[] memory){
+        return reqreceiveadst[division][unit];
+
+
+    }
+
+
+    mapping(string=>RequestSendDDST[]) public reqsendddst;
+
+    function sendreqddst(string memory from,string[] memory p,string[] memory q,string memory d) public{
+         if(requestcount[from]>=0){
+            requestcount[from]+=1;
+        }
+        else{
+            requestcount[from]=0;
+        }
+        RequestSendDDST memory l=RequestSendDDST(requestcount[from],from,p,q,d,"pending","pending");
+        ReceiveReqADST memory l1=ReceiveReqADST(requestcount[from],p,q,from,d,"pending");
+
+        if(keccak256(bytes(from))==keccak256(bytes("DIVISION1"))){
+            
+            reqreceiveadst[from]["D1ADST1"].push(l1);
+            reqreceiveadst[from]["D1ADST2"].push(l1);
+        }
+        if(keccak256(bytes(from))==keccak256(bytes("DIVISION2"))){
+            
+            reqreceiveadst[from]["D2ADST1"].push(l1);
+            reqreceiveadst[from]["D2ADST2"].push(l1);
+        }
+        if(keccak256(bytes(from))==keccak256(bytes("DIVISION3"))){
+            
+            reqreceiveadst[from]["D3ADST1"].push(l1);
+            reqreceiveadst[from]["D3ADST2"].push(l1);
+        }
+        reqsendddst[from].push(l);
+    }
+
+
+
+    function acceptreqadst(string memory division,string memory unit,uint reqno) public{
+       if(keccak256(bytes(division))==keccak256(bytes("DIVISION1"))){
+           if(keccak256(bytes(unit))==keccak256(bytes("D1ADST1"))){
+               reqreceiveadst[division][unit][reqno-1].acceptedstatus="active";
+               reqsendddst[division][reqno-1].acceptedby="D1ADST1";
+                reqsendddst[division][reqno-1].status="active";
+               reqreceiveadst[division]["D1ADST2"][reqno-1].acceptedstatus="decline";
+
+
+           }
+            if(keccak256(bytes(unit))==keccak256(bytes("D1ADST2"))){
+                reqreceiveadst[division][unit][reqno-1].acceptedstatus="active";
+               reqsendddst[division][reqno-1].acceptedby="D1ADST2";
+                reqsendddst[division][reqno-1].status="active";
+               reqreceiveadst[division]["D1ADST1"][reqno-1].acceptedstatus="decline";
+               
+           }
+
+       }
+       if(keccak256(bytes(division))==keccak256(bytes("DIVISION2"))){
+            if(keccak256(bytes(unit))==keccak256(bytes("D2ADST1"))){
+                reqreceiveadst[division][unit][reqno-1].acceptedstatus="active";
+                reqsendddst[division][reqno-1].acceptedby="D2ADST1";
+                reqsendddst[division][reqno-1].status="active";
+               reqreceiveadst[division]["D2ADST2"][reqno-1].acceptedstatus="decline";
+               
+           }
+            if(keccak256(bytes(unit))==keccak256(bytes("D2ADST2"))){
+                reqreceiveadst[division][unit][reqno-1].acceptedstatus="active";
+                reqsendddst[division][reqno-1].acceptedby="D2ADST2";
+                reqsendddst[division][reqno-1].status="active";
+               reqreceiveadst[division]["D2ADST1"][reqno-1].acceptedstatus="decline";
+               
+           }
+           
+       }
+       if(keccak256(bytes(division))==keccak256(bytes("DIVISION3"))){
+            if(keccak256(bytes(unit))==keccak256(bytes("D3ADST1"))){
+                reqreceiveadst[division][unit][reqno-1].acceptedstatus="active";
+               reqsendddst[division][reqno-1].acceptedby="D3ADST1";
+                reqsendddst[division][reqno-1].status="active";
+               reqreceiveadst[division]["D3ADST2"][reqno-1].acceptedstatus="decline";
+               
+           }
+            if(keccak256(bytes(unit))==keccak256(bytes("D3ADST2"))){
+                reqreceiveadst[division][unit][reqno-1].acceptedstatus="active";
+                reqsendddst[division][reqno-1].acceptedby="D3ADST2";
+                reqsendddst[division][reqno-1].status="active";
+               reqreceiveadst[division]["D3ADST1"][reqno-1].acceptedstatus="decline"; 
+           }
+       }
+    }
+
+    function declinereqadst(uint reqno,string memory division,string memory unit) public{
+        reqreceiveadst[division][unit][reqno-1].acceptedstatus="decline";
+        if(keccak256(bytes(division))==keccak256(bytes("DIVISION1"))){
+            if(keccak256(bytes(reqreceiveadst[division]["D1ADST1"][reqno-1].acceptedstatus))==keccak256(bytes("decline")) &&
+              keccak256(bytes(reqreceiveadst[division]["D1ADST2"][reqno-1].acceptedstatus))==keccak256(bytes("decline"))){
+                  reqsendddst[division][reqno-1].status="decline";
+
+              }
+
+        }
+        if(keccak256(bytes(division))==keccak256(bytes("DIVISION2"))){
+            
+            if(keccak256(bytes(reqreceiveadst[division]["D2ADST1"][reqno-1].acceptedstatus))==keccak256(bytes("decline")) &&
+              keccak256(bytes(reqreceiveadst[division]["D2ADST2"][reqno-1].acceptedstatus))==keccak256(bytes("decline"))){
+                  reqsendddst[division][reqno-1].status="decline";
+              }
+
+              
+
+        }
+        
+            
+        
+        if(keccak256(bytes(division))==keccak256(bytes("DIVISION3"))){
+            
+            if(keccak256(bytes(reqreceiveadst[division]["D3ADST1"][reqno-1].acceptedstatus))==keccak256(bytes("decline")) &&
+              keccak256(bytes(reqreceiveadst[division]["D3ADST2"][reqno-1].acceptedstatus))==keccak256(bytes("decline"))){
+                  reqsendddst[division][reqno-1].status="decline";
+              }
+        }
+            
+        }
+        struct DGSTReceived
+        {
+            uint reqno;
+            string from;
+            string[] products;
+            string[] quantities;
+            string date;
+            string acceptedstatus;
+        }
+
+
+        mapping(string=>DGSTReceived[]) public receivedgst;
+
+
+        function getallreciveddgst(string memory division) public view returns(DGSTReceived[] memory){
+            return receivedgst[division];
+        }
+
+
+
+
+        function sendtodgst(uint reqno,string memory from,string[] memory products,string[] memory quantities,string memory date) public{
+            DGSTReceived memory l=DGSTReceived(reqno,from,products,quantities,date,"pending");
+            reqsendddst[from][reqno-1].status="pending";
+            receivedgst[from].push(l);
+        }
+
+        function acceptdgst(uint reqno,string memory dgst,string memory from) public{
+            reqsendddst[from][reqno-1].status="active";
+            reqsendddst[from][reqno-1].acceptedby=dgst;
+            for(uint i=0;i<receivedgst[from].length;i++){
+                if(receivedgst[from][i].reqno==reqno){
+                    receivedgst[from][i].acceptedstatus="accepted";
+                }
+            }
+        }
+
+
+        struct manufreceived
+        {
+            uint reqno;
+            string from;
+            string[] products;
+            string[] quantities;
+            string date;
+            string acceptedstatus;
+        }
+
+
+        mapping(string=>manufreceived[]) public reqreceivemanufdivision;
+
+
+        function manufreceivedivision(uint reqno,string memory division,string[] memory products,string[] memory quantities,string memory date) public{
+           manufreceived memory l=manufreceived(reqno,division,products,quantities,date,"pending");
+           reqreceivemanufdivision[division].push(l);
+        }
+
+
+        function getallreceivereqmanuf(string memory division) public view returns(manufreceived[] memory){
+            return reqreceivemanufdivision[division];
+
+        }
+
+
+       
